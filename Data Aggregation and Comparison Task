@@ -1,0 +1,57 @@
+#an example of how you would aggregate data (e.g., steps, sales, scores) over time 
+#to identify a consistent performer or to determine the winner based on performance 
+#over multiple periods.
+
+
+# Define the data as dictionaries for each day
+day1 = {
+    'Random Walkers': 8795,
+    'AUM4TheRoad': 8939,
+    'TeamGoodwyn': 8953,
+    'Esri Team': 11033,
+    'Corner Walkers': 21879,
+    'Team Dynamo': 13089,
+    'Life is a Highway': 22020
+}
+
+day2 = {
+    'Random Walkers': 13199,
+    'AUM4TheRoad': 18939,
+    'TeamGoodwyn': 15080,
+    'Esri Team': 12345,
+    'Corner Walkers': 9800,
+    'Team Dynamo': 23290,
+    'Life is a Highway': 12007
+}
+
+day3 = {
+    'Random Walkers': 10002,
+    'AUM4TheRoad': 13447,
+    'TeamGoodwyn': 13353,
+    'Esri Team': 22345,
+    'Corner Walkers': 21879,
+    'Team Dynamo': 9119,
+    'Life is a Highway': 7897
+}
+
+# Combine all days into a single dictionary
+all_days = [day1, day2, day3]
+
+# Create a dictionary to store the total steps for each team
+total_steps = {}
+
+# Calculate the total steps for each team
+for day in all_days:
+    for team, steps in day.items():
+        if team not in total_steps:
+            total_steps[team] = 0
+        total_steps[team] += steps
+
+# Calculate the average steps for each team
+average_steps = {team: total / len(all_days) for team, total in total_steps.items()}
+
+# Find the winning team with the highest average steps
+winning_team = max(average_steps, key=average_steps.get)
+
+# Print the winning team's name
+print(f"The winning team is: {winning_team}")
