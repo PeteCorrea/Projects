@@ -1,0 +1,390 @@
+// This code demonstrates object-oriented programming (OOP) principles such as encapsulation, inheritance, polymorphism, and abstraction 
+to create an organized, modular structure for handling different types of vehicles. Encapsulation is used by making attributes private and 
+exposing them through getters and setters, while inheritance creates a hierarchy, allowing Bicycle, Motorcycle, and Car classes to build upon 
+the shared properties and methods defined in the base Vehicle class. Abstraction is achieved by making Vehicle an abstract base class with the 
+pure virtual function get_description(), which must be implemented in derived classes, allowing for a clean, simplified representation of 
+different vehicle types. Polymorphism enables each derived class to override the get_description() method, providing type-specific behavior 
+when accessing Vehicle objects through pointers or references. This allows functions to treat various vehicle objects uniformly while relying 
+on type-specific implementations. Additionally, the code uses composition by storing Vehicle pointers within a VehicleList class, and custom exception 
+handling via the FileIOError class, enhancing error management. Together, these principles make the code modular, reusable, and easy to extend 
+for handling a variety of vehicle types in a structured manner. //
+
+
+
+
+#include <iostream>                           
+#include <iomanip>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <string>
+using namespace std;
+const string vehicles_file = "vehicles.txt";
+enum class EngineType
+{
+    Gas = 1,
+    Diesel,
+    Electric,
+    Hybrid,
+    Others
+};
+enum class Command
+{
+    ViewBicycles = 1,
+    ViewMotorcycles,
+    ViewCars,
+    Exit,
+    InvalidCommand
+};
+class VehicleList
+{
+private:
+    string filename;
+    ifstream input_file;
+    vector<Vehicle*> vehicle_list;
+public:
+    VehicleList(string file_path) {
+        filename = file_path;
+        input_file.open(filename);
+        if (!input_file) {
+            cout << "Error opening file: " << filename << endl;
+            exit(1);
+        }
+    }
+};
+class Vehicle
+{
+private:
+    string pid;
+    string model;
+    double price;
+public:
+    Vehicle(string, string, double);
+    string get_pid() const;
+    void set_model(string);
+    string get_model() const;
+    void set_price(double);
+    double get_price() const;
+    virtual string get_description() const = 0;
+};
+class Bicycle : public Vehicle
+{
+public:
+    Bicycle(string, string, double);
+    string get_description() const;
+};
+class Motorcycle : public Bicycle
+{
+protected:
+    EngineType engine_type;
+public:
+    Motorcycle(string, string, double, EngineType);
+    void set_engine_type(EngineType);
+    EngineType get_engine_type() const;
+    string get_description() const;
+};
+class Car : public Motorcycle
+{
+private:
+    int no_of_passengers;
+public:
+    Car(string, string, double, EngineType, int);
+    void set_no_of_passengers(int);
+    int get_no_of_passengers() const;
+    string get_description() const;
+};
+class FileIOError : public runtime_error
+{
+public:
+    FileIOError(string message) : runtime_error(message) {};
+};
+void print_command_menu();
+void load_vehicles_from_file(vector<Bicycle>& bicycles,
+    vector<Motorcycle>& motorcycles, vector<Car>& cars);
+Command get_command();
+void handle_command(Command cmd, vector<Bicycle>& bicycles,
+    vector<Motorcycle>& motorcycles, vector<Car>& cars);
+void view_bicycles(const vector<Bicycle>& bicycles);
+void view_motorcycles(const vector<Motorcycle>& motorcycles);
+void view_cars(const vector<Car>& cars);
+EngineType get_engine_type_from_string(string engine_type);
+string get_string_from_engine_type(EngineType engine_type);
+Vehicle::Vehicle(string pid_param, string model_param, double price_param)
+{
+    pid = pid_param;
+    set_model(model_param);
+    set_price(price_param);
+}
+string Vehicle::get_pid() const
+{
+    return pid;
+}
+void Vehicle::set_model(string model_param)
+{
+    model = model_param;
+}
+string Vehicle::get_model() const
+{
+    return model;
+}
+void Vehicle::set_price(double price_param)
+{
+    price = price_param;
+}
+double Vehicle::get_price() const
+{
+    return price;
+}
+Bicycle::Bicycle(string pid_param, string model_param, double price_param) :
+    Vehicle(pid_param, model_param, price_param) {}
+string Bicycle::get_description() const
+{
+    return "\nProduct ID: " + get_pid()
+        + "\nModel: " + get_model()
+        + "\nPrice: $" + to_string(get_price()) + "\n";
+}
+Motorcycle::Motorcycle(string pid_param, string model_param, double price_param,
+    EngineType engine_type_param) : Bicycle(pid_param, model_param, price_param)
+{
+    set_engine_type(engine_type_param);
+}
+void Motorcycle::set_engine_type(EngineType engine_type_param)
+{
+    engine_type = engine_type_param;
+}
+EngineType Motorcycle::get_engine_type() const
+{
+    return engine_type;
+}
+string Motorcycle::get_description() const
+{
+    return Bicycle::get_description() +
+        +"Engine Type: " + get_string_from_engine_type(get_engine_type()) + "\n";
+}
+Car::Car(string pid_param, string model_param, double price_param,
+    EngineType engine_type_param, int no_of_passengers_param) :
+    Motorcycle(pid_param, model_param, price_param, engine_type_param)
+{
+    set_no_of_passengers(no_of_passengers_param);
+}
+void Car::set_no_of_passengers(int no_of_passengers_param)
+{
+    no_of_passengers = no_of_passengers_param;
+}
+int Car::get_no_of_passengers() const
+{
+    return no_of_passengers;
+}
+string Car::get_description() const
+{
+    return Motorcycle::get_description() +
+        "Number of Passengers: " + to_string(no_of_passengers) + "\n";
+}
+int main()
+{
+    cout << "The Vehicles Viewer program\n\n";
+    print_command_menu();
+    try
+    {
+        vector<Bicycle> bicycles;
+        vector<Motorcycle> motorcycles;
+        vector<Car> cars;
+        load_vehicles_from_file(bicycles, motorcycles, cars);
+        Command cmd;
+        do
+        {
+            cmd = get_command();
+            handle_command(cmd, bicycles, motorcycles, cars);
+        } while (cmd != Command::Exit);
+    }
+    catch (const FileIOError& ex)
+    {
+        cout << ex.what() << endl
+            << "Exiting program...\n\n";
+    }
+}
+void print_command_menu()
+{
+    cout << "COMMAND MENU\n"
+        << "1. View all bicycles\n"
+        << "2. View all motorcycles\n"
+        << "3. View all cars\n"
+        << "4. Exit program\n\n";
+}
+void load_vehicles_from_file(vector<Bicycle>& bicycles,
+    vector<Motorcycle>& motorcycles, vector<Car>& cars)
+{
+    ifstream input_file;
+    input_file.open(vehicles_file);
+    if (input_file)
+    {
+        int line_no = 0;
+        stringstream ss;
+        string line;
+        string model;
+        string pid;
+        double price;
+        string engine_type_str;
+        EngineType engine_type;
+        int no_of_passengers;
+        while (getline(input_file, line))
+        {
+            ++line_no;
+            ss.str(line);
+            ss.clear();
+            getline(ss, model, '\t');
+            getline(ss, pid, '\t');
+            if (tolower(pid[0]) == 'b')
+            {
+                ss >> price;
+                Bicycle bicycle(pid, model, price);
+                bicycles.push_back(bicycle);
+            }
+            else if (tolower(pid[0]) == 'm')
+            {
+                getline(ss, engine_type_str, '\t');
+                ss >> price;
+                engine_type = get_engine_type_from_string(engine_type_str);
+                Motorcycle motorcycle(pid, model, price, engine_type);
+                motorcycles.push_back(motorcycle);
+            }
+            else if (tolower(pid[0]) == 'c')
+            {
+                getline(ss, engine_type_str, '\t');
+                ss >> no_of_passengers;
+                ss >> price;
+                engine_type = get_engine_type_from_string(engine_type_str);
+                Car car(pid, model, price, engine_type, no_of_passengers);
+                cars.push_back(car);
+            }
+            else
+            {
+                cout << "Unknown vehicle type." << endl
+                    << "Skipping line No. " << line_no << "...\n\n";
+            }
+        }
+        input_file.close();
+    }
+    else
+    {
+        throw FileIOError("Unable to open file: " + vehicles_file);
+    }
+}
+Command get_command()
+{
+    cout << "Command: ";
+    int choice = 0;
+    cin >> choice;
+    cin.ignore();
+    Command cmd = static_cast<Command>(choice);
+    if (cmd < Command::ViewBicycles || cmd > Command::Exit)
+    {
+        return Command::InvalidCommand;
+    }
+    else
+    {
+        return cmd;
+    }
+}
+void handle_command(Command cmd, vector<Bicycle>& bicycles,
+    vector<Motorcycle>& motorcycles, vector<Car>& cars)
+{
+    switch (cmd)
+    {
+    case Command::ViewBicycles:
+        view_bicycles(bicycles);
+        break;
+    case Command::ViewMotorcycles:
+        view_motorcycles(motorcycles);
+        break;
+    case Command::ViewCars:
+        view_cars(cars);
+        break;
+    case Command::Exit:
+        cout << "\nBye!\n\n";
+        break;
+    default:
+        cout << "Invalid command. Try again.\n\n";
+        print_command_menu();
+    }
+}
+void view_bicycles(const vector<Bicycle>& bicycles)
+{
+    cout << "\nInformation of All Bicycles\n"
+        << "--------------------------------------------\n";
+    for (int i = 0; i < bicycles.size(); ++i)
+    {
+        cout << bicycles[i].get_description();
+    }
+    cout << endl;
+}
+void view_motorcycles(const vector<Motorcycle>& motorcycles)
+{
+    cout << "\nInformation of All Motorcycles\n"
+        << "--------------------------------------------\n";
+    for (int i = 0; i < motorcycles.size(); ++i)
+    {
+        cout << motorcycles[i].get_description();
+    }
+    cout << endl;
+}
+void view_cars(const vector<Car>& cars)
+{
+    cout << "\nInformation of All Cars\n"
+        << "--------------------------------------------\n";
+    for (int i = 0; i < cars.size(); ++i)
+    {
+        cout << cars[i].get_description();
+    }
+    cout << endl;
+}
+EngineType get_engine_type_from_string(string engine_type)
+{
+    EngineType result;
+    if (engine_type == "Gas")
+    {
+        result = EngineType::Gas;
+    }
+    else if (engine_type == "Diesel")
+    {
+        result = EngineType::Diesel;
+    }
+    else if (engine_type == "Electric")
+    {
+        result = EngineType::Electric;
+    }
+    else if (engine_type == "Hybrid")
+    {
+        result = EngineType::Hybrid;
+    }
+    else
+    {
+        result = EngineType::Others;
+    }
+    return result;
+}
+string get_string_from_engine_type(EngineType engine_type)
+{
+    string result;
+    if (engine_type == EngineType::Gas)
+    {
+        result = "Gas";
+    }
+    else if (engine_type == EngineType::Diesel)
+    {
+        result = "Diesel";
+    }
+    else if (engine_type == EngineType::Electric)
+    {
+        result = "Electric";
+    }
+    else if (engine_type == EngineType::Hybrid)
+    {
+        result = "Hybrid";
+    }
+    else
+    {
+        result = "Others";
+    }
+    return result;
+}
