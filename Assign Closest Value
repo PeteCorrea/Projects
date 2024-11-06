@@ -1,0 +1,46 @@
+-- Finding the closest integer to a specified target within a sorted vector of integers.
+-- Uses a modified binary search to efficiently locate this closest value.
+
+#include <iostream>
+#include <vector>
+#include <cmath>  // Include cmath for absolute value function
+
+int closestValue(const std::vector<int>& arr, int target) {
+    int left = 0;
+    int right = arr.size() - 1;
+
+    // Initialize closest with the first element
+    int closest = arr[0];
+
+    while (left <= right) {
+        int mid = left + (right - left) / 2;
+
+        if (arr[mid] == target) {
+            return target;  // If the target is found exactly, return it
+        }
+
+        // Update closest if a closer value is found
+        if (std::abs(arr[mid] - target) < std::abs(closest - target)) {
+            closest = arr[mid];
+        }
+
+        if (arr[mid] < target) {
+            left = mid + 1;  // Adjust the left boundary
+        }
+        else {
+            right = mid - 1;  // Adjust the right boundary
+        }
+    }
+
+    return closest;
+}
+
+int main() {
+    std::vector<int> arr = { -13, -5, 0, 3, 7, 7, 18, 34 };
+    int target = 4;
+    int closest = closestValue(arr, target);
+
+    std::cout << "Closest value to " << target << " is " << closest << std::endl;
+
+    return 0;
+}
